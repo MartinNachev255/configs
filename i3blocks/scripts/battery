@@ -1,0 +1,97 @@
+#!/bin/bash
+# ~/.config/i3blocks/scripts/battery
+
+# --- Configuration ---
+# Define colors (use hex codes #RRGGBB or color names like "green", "red", etc.)
+COLOR_CHARGING="#87CEEB"  # Sky Blue (or choose your preferred charging color)
+COLOR_FULL="#00FF00"      # Green
+COLOR_GOOD="#FFFFFF"      # White (or Green #00FF00 if you prefer)
+COLOR_WARN="#FFFF00"      # Yellow
+COLOR_CRIT="#FF0000"      # Red
+COLOR_UNKNOWN="#808080"   # Gray
+COLOR_NA="#808080"        # Gray for N/A
+
+# Define percentage thresholds for colors when discharging
+THRESHOLD_WARN=25        # Below this percentage, use WARN color
+THRESHOLD_CRIT=15       # Below this percentage, use CRIT color
+# --- End Configuration ---
+
+# Check if acpi is available
+if ! command -v acpi &> /dev/null; then
+    echo "<span foreground='${COLOR_NA}'>BAT N/A</span>"
+    exit 1
+fi
+
+# Get battery info using acpi
+OUTPUT=$(acpi -b)
+if [[ -z "$OUTPUT" ]]; then
+    # Handle case where acpi runs but finds no battery
+     echo "<span foreground='${COLOR_NA}'>BAT N/A</span>"
+     exit 0 # Exit normally, just nothing to show
+fi
+
+PERCENTAGE=$(echo "$OUTPUT" | grep -o '[0-9]*%' | sed 's/%//')
+STATUS=$(echo "$OUTPUT" | awk -F'[:,]' '{print $2}' | tr -d ' ')
+
+# Determine Icon and Color based on status and percentage
+COLOR=$COLOR_GOOD # Default to good color
+ICON="?"          # Default icon
+
+if [ "$STATUS" = "Charging" ]; then
+    ICON="󰂄" # High voltage symbol
+    COLOR=$COLOR_CHARGING
+elif [ "$STATUS" = "Full" ] || { [ "$STATUS" = "Unknown" ] && [ "$PERCENTAGE" = 100 ]; }; then
+    # Handle "Full" status explicitly, or Unknown but 100%
+    ICON="󱟢" # Plug symbol or Full symbol
+    COLOR=$COLOR_FULL
+elif [ "$STATUS" = "Discharging" ]; then
+     # Set Icon based on percentage
+     if [ "$PERCENTAGE" -gt 95 ]; then ICON="󰁹";
+     elif [ "$PERCENTAGE" -gt 90 ]; then ICON="󰂂";
+     elif [ "$PERCENTAGE" -gt 80 ]; then ICON="󰂁";
+     elif [ "$PERCENTAGE" -gt 70 ]; then ICON="󰂀";
+     elif [ "$PERCENTAGE" -gt 60 ]; then ICON="󰁿";
+     elif [ "$PERCENTAGE" -gt 50 ]; then ICON="󰁾";
+     elif [ "$PERCENTAGE" -gt 40 ]; then ICON="󰁽";
+     elif [ "$PERCENTAGE" -gt 30 ]; then ICON="󰁼";
+     elif [ "$PERCENTAGE" -gt 20 ]; then ICON="󰁻";
+     elif [ "$PERCENTAGE" -gt 10 ]; then ICON="󰁺";
+     else ICON="󰂎"; fi
+
+     # Set Color based on percentage thresholds
+     if [ "$PERCENTAGE" -le "$THRESHOLD_CRIT" ]; then
+         COLOR=$COLOR_CRIT
+     elif [ "$PERCENTAGE" -le "$THRESHOLD_WARN" ]; then
+         COLOR=$COLOR_WARN
+     else
+         COLOR=$COLOR_GOOD # Use the default good color if above warning threshold
+     fi
+else # Unknown or other status not explicitly handled (like "Not charging" but not "Discharging")
+    ICON="❓"
+    COLOR=$COLOR_UNKNOWN
+    # Use battery icon based on percentage if available, even if status is weird
+    if [ -n "$PERCENTAGE" ]; then
+         if [ "$PERCENTAGE" -gt 95 ]; then ICON="󰁹";
+         elif [ "$PERCENTAGE" -gt 90 ]; then ICON="󰂂";
+         elif [ "$PERCENTAGE" -gt 80 ]; then ICON="󰂁";
+         elif [ "$PERCENTAGE" -gt 70 ]; then ICON="󰂀";
+         elif [ "$PERCENTAGE" -gt 60 ]; then ICON="󰁿";
+         elif [ "$PERCENTAGE" -gt 50 ]; then ICON="󰁾";
+         elif [ "$PERCENTAGE" -gt 40 ]; then ICON="󰁽";
+         elif [ "$PERCENTAGE" -gt 30 ]; then ICON="󰁼";
+         elif [ "$PERCENTAGE" -gt 20 ]; then ICON="󰁻";
+         elif [ "$PERCENTAGE" -gt 10 ]; then ICON="󰁺";
+         else ICON="󰂎"; fi
+    fi
+fi
+
+# Output for i3blocks with Pango markup for color
+echo "<span foreground='${COLOR}'>$ICON $PERCENTAGE%</span>"
+
+# Set urgent flag for i3blocks if battery is low and discharging
+# This is separate from the color, but uses a similar threshold
+if [ "$STATUS" = "Discharging" ] && [ "$PERCENTAGE" -le "$THRESHOLD_CRIT" ]; then
+    exit 33 # Standard i3blocks urgent exit code
+fi
+
+exit 0

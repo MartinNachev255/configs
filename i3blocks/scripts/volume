@@ -1,0 +1,75 @@
+#!/bin/bash
+# ~/.config/i3blocks/scripts/volume (using pactl)
+
+# --- Configuration ---
+# Icons (replace with your preferred characters/icons if desired)
+ICON_MUTED="󰖁"
+ICON_VOL_LOW=""   # Volume <= 33%
+ICON_VOL_MEDIUM="" # Volume <= 66%
+ICON_VOL_HIGH=""  # Volume > 66%
+ICON_ERROR="❓"
+SINK="@DEFAULT_SINK@" # Use the default sink defined by PulseAudio/PipeWire
+# --- End Configuration ---
+
+# Check if pactl is installed
+if ! command -v pactl &> /dev/null; then
+    echo "$ICON_ERROR N/A (pactl not found)"
+    exit 1
+fi
+
+# Attempt to get volume and mute status
+VOLUME_OUTPUT=$(pactl get-sink-volume "$SINK")
+MUTE_OUTPUT=$(pactl get-sink-mute "$SINK")
+
+# Check if pactl commands succeeded (exit code 0)
+if [ $? -ne 0 ]; then
+    echo "$ICON_ERROR N/A (pactl error)"
+    exit 1
+fi
+
+# --- Parse Volume ---
+# Extract the first percentage value found
+VOLUME=$(echo "$VOLUME_OUTPUT" | grep -o '[0-9]*%' | head -n 1 | sed 's/%//')
+
+# Validate that VOLUME is a number
+if ! [[ "$VOLUME" =~ ^[0-9]+$ ]]; then
+    VOLUME="N/A" # Set to N/A if parsing failed
+fi
+
+# --- Parse Mute Status ---
+# Check if the output contains "yes" for muted state
+if echo "$MUTE_OUTPUT" | grep -q 'Mute: yes'; then
+    MUTED="true"
+else
+    MUTED="false"
+fi
+
+# --- Handle Clicks (passed via environment by i3blocks) ---
+# Only handle actions that modify state; display update is triggered by signal
+case $BLOCK_BUTTON in
+    1) pactl set-sink-mute "$SINK" toggle ;; # Left click: Toggle mute
+    3) pavucontrol & disown ;;               # Right click: Launch pavucontrol (optional, install it if needed)
+    # Scrolling is handled directly in i3blocks.conf for debouncing & signaling
+esac
+
+# --- Determine Icon and Output ---
+if [ "$VOLUME" = "N/A" ]; then
+    # Error case if volume parsing failed earlier
+    echo "$ICON_ERROR N/A"
+elif [ "$MUTED" = "true" ]; then
+    # Muted state
+    echo "$ICON_MUTED"
+else
+    # Determine volume icon based on percentage
+    if [ "$VOLUME" -le 33 ]; then
+        ICON="$ICON_VOL_LOW"
+    elif [ "$VOLUME" -le 66 ]; then
+        ICON="$ICON_VOL_MEDIUM"
+    else
+        ICON="$ICON_VOL_HIGH"
+    fi
+    # Output non-muted state
+    echo "$ICON $VOLUME%"
+fi
+
+exit 0

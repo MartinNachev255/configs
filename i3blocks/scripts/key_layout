@@ -1,0 +1,25 @@
+#!/bin/bash
+# ~/.config/i3blocks/scripts/keylayout (using xkb-switch)
+
+ICON="⌨️" # Or use text like "KEY:"
+
+# Check if xkb-switch is available
+if ! command -v xkb-switch &> /dev/null; then
+    # Provide a more helpful message if the tool is missing
+    echo "$ICON N/A ('xkb-switch' not found)"
+    exit 1
+fi
+
+# xkb-switch directly outputs the currently active layout symbol
+LAYOUT=$(xkb-switch | awk '{print substr($0, 1, 2)}')
+
+# Check if layout information was successfully retrieved
+if [ -z "$LAYOUT" ]; then
+    echo "$ICON N/A"
+    exit 1
+fi
+
+# Output the icon and the layout code in uppercase
+echo "$(echo "$LAYOUT" | tr '[:lower:]' '[:upper:]')"
+
+exit 0

@@ -1,0 +1,15 @@
+#!/bin/bash
+# ~/.config/i3blocks/scripts/calendar_script.sh
+
+# Appearance Options
+DATE_FORMAT='+%d/%m %a'
+
+# Handle clicks (Button 1 = Left Click)
+if [[ "$BLOCK_BUTTON" -eq 1 ]]; then
+    # Launch Zenity calendar, run in background (&) and disown
+    # so it doesn't block the script or i3blocks
+    zenity --calendar --text="Click date to close" --title="Calendar" & disown
+fi
+
+# Always output the date for display
+echo "$(date "$DATE_FORMAT")"

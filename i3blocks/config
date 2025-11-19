@@ -1,0 +1,43 @@
+# ~/.config/i3blocks/config
+# Global settings
+command=~/.config/i3blocks/scripts/$BLOCK_NAME
+separator_block_width=15
+markup=pango
+
+#Volume
+[volume]
+interval=1
+
+[separator]
+
+# Battery Status
+# Updates every 30 seconds
+[battery]
+#label=BAT # Label/Icon is included in the script output
+interval=5
+signal=4
+
+[separator]
+
+# Calendar (Clickable Date)
+# Updates every 30 seconds (for date changes), clickable for calendar popup
+[calendar]
+#label=📅 # Label/Icon is included in the script output
+interval=30
+# signal=3 # Optionally update on signal
+
+[separator]
+
+[key_layout]
+interval=1
+
+[separator]
+
+# Time
+# Updates every second
+[time]
+command=date '+%H:%M:%S'
+interval=1
+# signal=4 # Optionally update on signal
+
+[separator]

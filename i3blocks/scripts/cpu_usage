@@ -1,0 +1,35 @@
+#!/bin/bash
+# ~/.config/i3blocks/scripts/cpu_usage_script.sh
+
+# Check if mpstat is available
+if ! command -v mpstat &> /dev/null; then
+    # Fallback using vmstat (less accurate, might need field adjustment)
+    if command -v vmstat &> /dev/null; then
+        IDLE=$(vmstat 1 2 | tail -1 | awk '{print $15}') # Field 15 is often idle %
+        USAGE=$(echo "100 - $IDLE" | bc)
+        printf "CPU %.0f%%\n" "$USAGE"
+    else
+         echo "CPU N/A"
+         exit 1
+     fi
+    exit 0
+fi
+
+# Get the average CPU idle percentage over a 1-second interval
+# mpstat outputs multiple lines; we use awk to find the 'Average:' line
+# and grab the last field, which is %idle.
+IDLE=$(mpstat 1 1 | awk '/Average:/ {print $NF}')
+
+# Calculate usage percentage using bc for floating point math
+USAGE=$(echo "100 - $IDLE" | bc)
+
+# Format output to have a whole number percentage
+printf "CPU %.0f%%\n" "$USAGE"
+
+# Optional: Set urgent flag if CPU usage is very high
+# if (( $(echo "$USAGE > 90" | bc -l) )); then
+#     exit 33
+# fi
+
+exit 0
+

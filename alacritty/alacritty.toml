@@ -1,0 +1,28 @@
+[font] 
+size = 8.5
+
+[font.bold]
+family = "JetBrains Mono"
+style = "Bold"
+
+[font.bold_italic]
+family = "JetBrains Mono"
+style = "Bold Italic"
+
+[font.italic]
+family = "JetBrains Mono"
+style = "Italic"
+
+[font.normal]
+#family = "Fira Code"
+family = "JetBrains Mono"
+style = "Regular"
+
+[terminal.shell]
+program = "/usr/bin/tmux"
+args = [
+	"new-session",
+	"-A",
+	"-s",
+	"main"
+]
